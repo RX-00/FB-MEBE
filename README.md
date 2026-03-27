@@ -2,8 +2,9 @@
 
 # FB-MEBE: Maximum Entropy Behavior Exploration
 
-[Website](https://math-286-pro.github.io/FB-MEBE-Web/)
+[Website](https://math-286-pro.github.io/FB-MEBE-Web/)&emsp;&emsp;[Paper](https://arxiv.org/abs/2603.25464)
 
+Code for the paper [`"Maximum Entropy Behavior Exploration for Sim2Real Zero-Shot Reinforcement Learning"`](https://arxiv.org/abs/2603.25464).
 <img src="pctures/FB-Teaser.png" alt="FB-MEBE teaser" width="900" />
 
 </div>
