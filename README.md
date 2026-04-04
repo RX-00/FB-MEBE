@@ -114,6 +114,11 @@ wandb login
 ```bash
 ```
 
+## Q&A
+
+> Q1: The trained FB model exhibits YAW drift during forward locomotion. Can this issue be mitigated by incorporating mirrored data during pretraining like [D3](https://leggedrobotics.github.io/d3-skill-discovery/)?
+> 
+> A1: In our experiments, training with mirrored data did not successfully eliminate the drift.
 
 <!-- ![Isaac Lab](docs/source/_static/isaaclab.jpg)
 
