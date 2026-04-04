@@ -87,23 +87,33 @@ agent:
 git clone https://github.com/MATH-286-Pro/FB-MEBE.git
 
 # 1. create virtual env (conda example)
-conda create -n env_isaaclab python=3.12
-conda activate env_isaaclab
+conda create -n env_fb python=3.10 -y
+conda activate env_fb
 
-# 2. install isaaclab
+# 2. install isaacsim 
+# (you can follow: https://isaac-sim.github.io/IsaacLab/main/source/setup/installation/pip_installation.html)
+pip install --upgrade pip
+pip install "isaacsim[all,extscache]==4.5.0" --extra-index-url https://pypi.nvidia.com
+# NOTE: This command is for x86_64 system
+pip install -U torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu128
+
+
+# 3. install isaaclab
 ./isaaclab.sh --install
 
-# 3. Monitor training using wandb
+# 4. Monitor training using wandb
 # first run this command to log in to your wandb account
+pip install --upgrade wandb
 wandb login
 # then go to "scripts/reinforcement_learning/fb_mod/configs/Isaaclab_pretrain_config_go2.yaml"
 # in wandb section change to your "entity" and "project"
 
-# 4. Run bash to train FB (you might encounter some python dependency issues)
+# 5. Run bash to train FB (you might encounter some python dependency issues)
 ./bash/fb_pretrain.sh
 
-
-# Others
+```
+```bash
+# Other commands and notes
 ./bash/fb_pretrain_multi.sh # For series of training
 ./bash/play_xbox.sh         # run model in isaaclab controlled by joystick
 ./euler/server.md           # check the procedure to run training on Euler
