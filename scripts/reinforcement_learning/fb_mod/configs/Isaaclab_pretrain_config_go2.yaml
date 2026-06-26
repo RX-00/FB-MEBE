@@ -35,11 +35,11 @@ env:
 
 ##########################################################################################################################
 wandb:
-  use_wandb: true
-  entity:    math-286-pro-epfl
-  project:   FB_Jiajun
-  name:      FB(M)_NF_Vxy_BETA1_Critic
-  group:     FB(M)_NF_Vxy_BETA1_Critic
+  use_wandb: false
+  entity:    roy-xing
+  project:   FB_MEBE
+  name:      Initial Test
+  group:     Initial Test
   tags:
 
 ###################################################### User Define #######################################################
