@@ -9,6 +9,7 @@ Code for the paper [`"Maximum Entropy Behavior Exploration for Sim2Real Zero-Sho
 
 </div>
 
+This fork and branch is a minimal cleaning of the original repo and an additional (WIP) tutorial.
 
 ## File Structure
 
