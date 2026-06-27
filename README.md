@@ -240,8 +240,39 @@ pip install "wandb==0.17.9" "protobuf<5,>=3.20.3"
 
 ```
 
-## Issues
+## Play
+
+Use `play.py` to evaluate a saved FB policy and record an eval video. It needs both a model checkpoint and the matching replay-buffer checkpoint.
+
+To play the policy trained by `./bash/fb_pretrain.sh` in this workspace:
+
 ```bash
+conda activate fb-mebe
+python scripts/reinforcement_learning/fb_mod/play.py \
+    --run-dir "exp_local/fb_mod/Isaac-Flat-Unitree-Go2-Rnd-Full-FB-ABS-v0/Initial Test/2026-06-26_18-40-46" \
+    --model-step 150000 \
+    --replay-buffer-step 150000
+```
+
+For another run, pass its run directory and choose `latest` or a specific saved step:
+
+```bash
+python scripts/reinforcement_learning/fb_mod/play.py \
+    --run-dir exp_local/fb_mod/<task>/<group>/<timestamp> \
+    --model-step latest \
+    --replay-buffer-step latest
+```
+
+`play.py` does not save videos back into the training run directory. Each playback call creates a new directory under `exp_local/fb_mod/<task>/` using the time playback started:
+
+```text
+exp_local/fb_mod/<task>/<play-timestamp>_play/
+```
+
+With the default play config, eval videos are saved in that run's `videos_eval/` directory. The file name is generated from the evaluated task and mode as `<task>_<mode>_250.mp4`; for the default locomotion eval, the path is:
+
+```text
+exp_local/fb_mod/<task>/<play-timestamp>_play/videos_eval/locomotion_list_250.mp4
 ```
 
 ## Q&A
