@@ -11,6 +11,14 @@ Code for the paper [`"Maximum Entropy Behavior Exploration for Sim2Real Zero-Sho
 
 This fork and branch is a minimal cleaning of the original repo and an additional (WIP) tutorial.
 
+## Documentation
+
+Detailed repository documentation is available in:
+
+- [`docs/architecture.md`](docs/architecture.md): code layout, FB training flow, Go2 task contracts, generated artifacts, and known inconsistencies.
+- [`docs/usage.md`](docs/usage.md): setup, training, playback, offline data, Docker, and cluster commands.
+- [`docs/development.md`](docs/development.md): validation, safe edit locations, invariants, and maintenance notes.
+
 ## File Structure
 
 ```
@@ -123,8 +131,8 @@ pip install "wandb==0.17.9" "protobuf<5,>=3.20.3"
 ```bash
 # Other commands and notes
 ./bash/fb_pretrain_multi.sh # For series of training
-./bash/play_xbox.sh         # run model in isaaclab controlled by joystick
-./euler/server.md           # check the procedure to run training on Euler
+./bash/fb_play_xbox.sh      # run model in isaaclab controlled by joystick
+bash/euler/server.md        # check the procedure to run training on Euler
 
 ```
 
