@@ -4,19 +4,13 @@
 
 ############ Hydra Dependency #############
 import os, sys
-import hydra
 import omegaconf as omgcf
+from play_config import load_play_configs
 
 # read hydra config
 config_dir = os.path.join(os.path.dirname(__file__), 'configs')
 
-# Parse config name from command line arguments
-config_name = 'Isaaclab_fb_play_config_base'
-with hydra.initialize_config_dir(config_dir=os.path.abspath(config_dir), version_base="1.1"):
-    play_cfg = hydra.compose(config_name=config_name)
-
-with hydra.initialize_config_dir(config_dir=os.path.abspath(play_cfg.path), version_base="1.1"):
-    hydra_cfg = hydra.compose(config_name="hydra_config")
+play_cfg, hydra_cfg, MODEL_PATH, REPLAY_BUFFER_PATH = load_play_configs(config_dir)
 
 app_cfg = {
     "headless":       play_cfg.env.headless,
@@ -115,13 +109,13 @@ class WORKSPACE:
             self.eval_env  = FB_VecEnvWrapper(self.env)  # type: ignore
 
         # 2.创建 agent
-        self.agent = FBPolicyLoader(path=f"{play_cfg.path}/models/model_step_150000.pt", device=self.device)
+        self.agent = FBPolicyLoader(path=str(MODEL_PATH), device=self.device)
 
         # 3.创建 buffer
         self.replay_buffer = {
             "train": DictBuffer(self.train_cfg.replay_buffer_capacity, self.device)
         }
-        data = torch.load(f"{play_cfg.path}/models/replay_buffer_step_150000.pt", weights_only=True)
+        data = torch.load(str(REPLAY_BUFFER_PATH), weights_only=True, map_location=self.device)
         self.replay_buffer['train'].extend(data)
         del data
 
@@ -154,7 +148,7 @@ class WORKSPACE:
     ####################################################################################################################
     def eval(self):
         self.env.unwrapped.set_debug_vis(True)  # type: ignore
-        print(f"T:{self.time} Start Evaluation")
+        print(f"T:{self.time} Start Evaluation", flush=True)
         self.eval_task('locomotion', 'list')           
         # print("Mean Rewards: ", self.eval_metrics.get_tasks_episode_reward())
 
@@ -202,7 +196,7 @@ class WORKSPACE:
             self.eval_env.stop_recording(f"{task}_{mode}", step=250)
         self.eval_env.train_task()
 
-        print(f"T:{self.time} | Task: {task}_{mode}")
+        print(f"T:{self.time} | Task: {task}_{mode}", flush=True)
 
 ########################################################################################################################
 

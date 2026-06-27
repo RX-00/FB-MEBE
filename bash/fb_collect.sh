@@ -1,1 +1,1 @@
-python scripts/reinforcement_learning/fb_mod/play_collect.py
+python scripts/reinforcement_learning/fb_mod/play_collect.py "$@"

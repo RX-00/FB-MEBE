@@ -4,24 +4,20 @@
 
 ############ Hydra Dependency #############
 import os, sys
-import hydra
 import omegaconf as omgcf
+from play_config import load_play_configs
 
 # read hydra config
 config_dir = os.path.join(os.path.dirname(__file__), 'configs')
 
-# Parse config name from command line arguments
-config_name = 'Isaaclab_fb_play_config_base'
-with hydra.initialize_config_dir(config_dir=os.path.abspath(config_dir), version_base="1.1"):
-    play_cfg = hydra.compose(config_name=config_name)
-
-with hydra.initialize_config_dir(config_dir=os.path.abspath(play_cfg.path), version_base="1.1"):
-    hydra_cfg = hydra.compose(config_name="hydra_config")
+play_cfg, hydra_cfg, MODEL_PATH, _ = load_play_configs(config_dir, require_replay_buffer=False)
+video_enabled = bool(hydra_cfg.env.get("video", hydra_cfg.env.get("video_train", False)))
+video_length = hydra_cfg.env.get("video_length", hydra_cfg.env.get("video_train_length", 250))
 
 app_cfg = {
     "headless":       play_cfg.env.headless,
     "device":         hydra_cfg.env.device,
-    "enable_cameras": hydra_cfg.env.video,
+    "enable_cameras": video_enabled,
 }
 
 ############ Launch Isaaclab APP #############
@@ -105,13 +101,13 @@ class WORKSPACE:
         self.env = gym.make(
             hydra_cfg.env.task,
             cfg = self.env_cfg,
-            render_mode = 'rgb_array' if hydra_cfg.env.video else None,
+            render_mode = 'rgb_array' if video_enabled else None,
         )
-        if hydra_cfg.env.video:
+        if video_enabled:
             video_args_collect = {
                 'video_folder': str(self.work_dir / 'videos_collect'),
                 'step_trigger': lambda step: step % 1000 == 0,
-                'video_length': hydra_cfg.env.video_length,
+                'video_length': video_length,
                 'name_prefix': 'collect',
                 'disable_logger': True,
                 'use_wandb': play_cfg.wandb.use_wandb,
@@ -123,7 +119,7 @@ class WORKSPACE:
             self.eval_env  = FB_VecEnvWrapper(self.env)  # type: ignore
 
         # 2.创建 agent
-        self.agent = FBPolicyLoader(path=f"{play_cfg.path}/models/model_step_150000.pt", device=self.device)
+        self.agent = FBPolicyLoader(path=str(MODEL_PATH), device=self.device)
 
         # 3.创建 buffer
         self.replay_buffer = {

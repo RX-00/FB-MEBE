@@ -35,7 +35,7 @@ env:
 
 ##########################################################################################################################
 wandb:
-  use_wandb: false
+  use_wandb: true
   entity:    roy-xing
   project:   FB_MEBE
   name:      Initial Test

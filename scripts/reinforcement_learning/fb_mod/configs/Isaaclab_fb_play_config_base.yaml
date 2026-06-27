@@ -10,8 +10,11 @@ env:
   headless: true
   num_envs: 512
   seed: 0
+  device: training
 
 wandb:
   use_wandb: false
 
-path: path to your model.pt/../.. directory
+path: latest
+model_step: latest
+replay_buffer_step: latest
