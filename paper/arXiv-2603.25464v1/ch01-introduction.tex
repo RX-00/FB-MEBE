@@ -1,0 +1,24 @@
+\section{Introduction}
+Zero-shot reinforcement learning (RL) \citep{touati2023does} has emerged as a promising paradigm for developing general-purpose agents. 
+By learning successor measures that decouple dynamics from rewards, these methods generate near-optimal policies for a big family of reward functions at test time, with minimal amount of computation and relying solely on unlabeled, precollected data. 
+This departs from standard, fixed-reward-based RL \citep{sutton1998introduction}, which typically requires training a new policy whenever the objective changes. 
+As these methods scale beyond complex and broader settings, they are usually referred to as Behavior Foundation Models (BFMs) \citep{tirinzoni2025zeroshot}. Such generalization capabilities are particularly appealing for robotics, where usually learning relevant policies involves tedious reward engineering. While general-purpose foundation models trained on vast amounts of (un)labeled data have emerged as a promising paradigm for robotic manipulation \citep{intelligence2025pi, brohan2023rt,kim2024openvla}, the application of BFMs for legged systems still remains underexplored.
+One of the main bottlenecks is the reliance on large, diverse, task-agnostic precollected datasets \citep{laskin2021urlb}, which are often unavailable at scale for legged robots. 
+
+Recently, \citet{tirinzoni2025zeroshot} proposed an online zero-shot RL algorithm grounding policy learning and exploration towards an external motion capture dataset. Based on this idea, BFM-Zero \citep{li-2025} represents an early effort to transfer such zero-shot RL methods to a humanoid robot. However, these methods still rely on supervision from external datasets. 
+In this paper, we focus on the quadrupedal setting. We observe that naive deployment of online FB suffers from ineffective exploration and has difficulties in discovering the sparse manifold of stable locomotion. In contrast to previously explored efforts \citep{li-2025}, large motion capture dataset are not readily available for quadrupedal robots and thus cannot be used to regularize exploration.
+
+We thus propose \method (Maximum Entropy Behavior Exploration), an online zero-shot RL framework based on the forward-backward (FB) algorithm \citep{touati2021learning}, which does not require access to external datasets.
+
+
+\method leverages an unsupervised behavior exploration strategy that guides the agent to maximize the entropy of the achieved behavior distribution,  similarly to \citep{pitis2020maximum}. 
+Closest to our work, \citep{urpiepistemically} framed the exploration problem in FB as a minimization of the epistemic uncertainty that the algorithm has of its representations.
+In our case, we adopt a frequentist approach, guiding the agent towards reaching behaviors with low visitation count. This strategy implicitly induces a curriculum on the behaviors with which to explore next, effectively pushing the frontier of achievable behaviors. Furthermore, to ensure that the manifold of solutions induced by the unsupervised strategy is aligned with the downstream task of interest,  we embed an inductive bias to favor physically plausible behaviors via a behavior regularizer. This forces the recovered policies to maintain their zero-shot capabilities while being readily deployable to real hardware. 
+
+We empirically demonstrate that \method achieves improved downstream performance compared to other exploration strategies in simulation in a range of downstream tasks, and that it renders policies with natural behaviors that can be seamlessly deployed to hardware without further finetuning.
+To the best of our knowledge, this is the second instantiation of the FB algorithm on real robotic systems, and the very first to do so entirely online without relying on prior external datasets.
+In summary, in this work we provide a maximum entropy exploration strategy for efficiently learning FB representations online that %\begin{enumerate}[label=\alph*)]
+a) exhibits improved downstream performance in quadruped tasks in simulation compared to other exploration alternatives,
+b) renders policies with smooth, physically plausible behaviors and 
+c) enables the direct, zero-shot deployment of recovered policies onto real hardware.
+
