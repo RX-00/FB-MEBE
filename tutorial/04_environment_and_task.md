@@ -57,11 +57,12 @@ returns a dictionary:
 | `policy` | `45` | Actor | Noisy velocity, gravity, joint state, and previous action. |
 | `obs` | `34` | Forward map F | Clean state prefix for FB. |
 | `goal` | `10` | Backward map B | Clean low-dimensional behavior projection. |
-| `critic` | `58` | Optional regularization critic | Clean state, contacts, foot heights, and actions. |
+| `critic` | `54` | Optional regularization critic | Clean state, contacts, foot heights, and actions. |
 | `raw` | dict | Reward inference | Named tensors such as `vx`, `vy`, `wz`, `gx`, `gy`, `gz`, and `base_height`. |
 
 The configured dimensions are in
 `source/isaaclab_tasks/isaaclab_tasks/direct/go2/env_default_abs/go2_cfg_base.py:27`.
+The critic dimension is `33 + 1 + 8 + 12 = 54`.
 
 ## Actor Observation
 

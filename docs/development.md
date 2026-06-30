@@ -129,7 +129,7 @@ The training loop, agent updates, reward inference, and playback scripts rely on
 
 These issues are verified from source inspection, not fixed here:
 
-- `pretrain_offline.py` has a hard-coded absolute `offline_data_path`.
+- `pretrain_offline.py` is stale against the current Go2 configs: it uses old `env.video*` keys, has a hard-coded absolute `offline_data_path`, and calls `ConvexHull` without importing it.
 - `Isaaclab_fb_play_config_base.yaml` defaults `path`, `model_step`, and `replay_buffer_step` to `latest`; this is convenient locally but can select the wrong run if multiple `exp_*` runs are present.
 - `Isaaclab_pretrain_config_base.yaml` uses `Isaac-Flat-Unitree-Go2-Rnd-full-FB-v0`, which does not match the registered Go2 IDs.
 - `source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py` registers `Isaac-Flat-Unitree-Go2-FB-v0` to module paths that are not present.

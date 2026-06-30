@@ -48,7 +48,7 @@ The Go2 config overrides:
 
 `pretrain.py` launches Isaac Lab before importing simulator-dependent modules:
 
-- `scripts/reinforcement_learning/fb_mod/pretrain.py:31`
+- `scripts/reinforcement_learning/fb_mod/pretrain.py`
 - `isaaclab.app.AppLauncher(app_cfg).app`
 
 This order matters. Importing many Isaac Lab modules before the app exists can
@@ -74,7 +74,7 @@ Then it patches:
 
 ## 5. Agent Dimensions
 
-Before constructing the agent, `pretrain.py:427` copies environment dimensions
+Before constructing the agent, `pretrain.py` copies environment dimensions
 into the Hydra agent config:
 
 | Config field | Source |
@@ -107,7 +107,7 @@ It creates:
 
 ## 7. Replay Collection
 
-Training starts at `pretrain.py:214`.
+Training starts in `WORKSPACE.train`.
 
 The loop keeps a current transition dictionary `td`, with:
 

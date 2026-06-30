@@ -177,7 +177,7 @@ Both `FBAgent.save()` and `FB_CRL_AGENT.save()` write the same keys:
 }
 ```
 
-`scripts/reinforcement_learning/fb_mod/loader/fb_net_loader.py:FBPolicyLoader` depends on that contract. Given `path/to/run/models/model_step_<t>.pt`, it resolves the run config at `path/to/run/hydra_config.yaml`, rebuilds actor and backward-map networks from that config, loads the checkpoint keys, and exposes:
+`scripts/reinforcement_learning/fb_mod/loader/fb_net_loader.py::FBPolicyLoader` depends on that contract. Given `path/to/run/models/model_step_<t>.pt`, it resolves the run config at `path/to/run/hydra_config.yaml`, rebuilds actor and backward-map networks from that config, loads the checkpoint keys, and exposes:
 
 | Method | Role |
 | --- | --- |
@@ -208,9 +208,9 @@ Observed generated files and directories:
 
 | Artifact | Created by | Meaning |
 | --- | --- | --- |
-| `hydra_config.yaml` | `pretrain.py` and `pretrain_offline.py` | Resolved training config used by loaders and reproducibility. |
-| `models/model_step_<t>.pt` | `pretrain.py` and `pretrain_offline.py` | Actor/backward-map checkpoint. |
-| `models/replay_buffer_step_<t>.pt` | `pretrain.py` and `pretrain_offline.py` | Sample of stored observations for reward inference. |
+| `hydra_config.yaml` | `pretrain.py`; intended stale offline path | Resolved training config used by loaders and reproducibility. |
+| `models/model_step_<t>.pt` | `pretrain.py`; intended stale offline path | Actor/backward-map checkpoint. |
+| `models/replay_buffer_step_<t>.pt` | `pretrain.py`; intended stale offline path | Sample of stored observations for reward inference. |
 | `videos_pretrain/` | Video wrappers when training video is enabled. |
 | `videos_eval/` | Video wrappers when eval video is enabled. |
 | `offline_data.pt` | `play_collect.py` | Full collected offline buffer saved under `play_cfg.path`. |
@@ -241,7 +241,7 @@ This fork keeps substantial Isaac Lab source code, but it is not a complete upst
 
 These are observed from repository files and should not be treated as fixed:
 
-- `scripts/reinforcement_learning/fb_mod/pretrain_offline.py` hard-codes `offline_data_path` to `/home/jiajun_hu/.../offline_data.pt`. It is not portable until replaced with a config value or local path.
+- `scripts/reinforcement_learning/fb_mod/pretrain_offline.py` is stale against the current configs: it reads old `env.video`, `env.video_interval`, and `env.video_length` keys, hard-codes `offline_data_path` to `/home/jiajun_hu/.../offline_data.pt`, and calls `ConvexHull` without importing it. Treat offline pretraining as not currently validated until those are fixed.
 - `scripts/reinforcement_learning/fb_mod/configs/Isaaclab_fb_play_config_base.yaml` defaults to `path: latest`. This is convenient, but explicit `--run-dir` is safer when multiple runs exist.
 - `scripts/reinforcement_learning/fb_mod/configs/Isaaclab_pretrain_config_base.yaml` uses an unregistered-looking task ID with lowercase `full`. Use `Isaaclab_pretrain_config_go2.yaml` or a registered task ID.
 - `source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py` registers `Isaac-Flat-Unitree-Go2-FB-v0` to missing module paths.

@@ -8,8 +8,9 @@
   `isaaclab.sh --docs`, and Docker-related scripts.
 - `bash/euler/` and `bash/tars_case/` contain cluster notes that reference
   removed Docker tooling.
-- `scripts/reinforcement_learning/fb_mod/pretrain_offline.py` contains a
-  hard-coded absolute offline-data path.
+- `scripts/reinforcement_learning/fb_mod/pretrain_offline.py` is stale: it uses
+  old `env.video*` keys, contains a hard-coded absolute offline-data path, and
+  calls `ConvexHull` without importing it.
 - `source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py` registers a stale
   task ID, `Isaac-Flat-Unitree-Go2-FB-v0`.
 

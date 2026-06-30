@@ -28,7 +28,7 @@ python scripts/reinforcement_learning/fb_mod/play.py \
 
 ## Config Resolution
 
-`scripts/reinforcement_learning/fb_mod/play_config.py:150` resolves:
+`scripts/reinforcement_learning/fb_mod/play_config.py::load_play_configs` resolves:
 
 1. the run directory
 2. the model checkpoint

@@ -18,7 +18,7 @@ FB-MEBE evaluation does not train a new policy. It:
 Original code:
 
 - `scripts/reinforcement_learning/fb_mod/play.py:161`
-- `scripts/reinforcement_learning/fb_mod/loader/fb_net_loader.py:70`
+- `scripts/reinforcement_learning/fb_mod/loader/fb_net_loader.py::FBPolicyLoader.reward_inference`
 - `scripts/reinforcement_learning/toolbox/functions_reward.py:126`
 
 ## Debug First

@@ -119,8 +119,13 @@ agent:
     train_goal_ratio: 0.8
 ```
 
-So 80 percent of training latents come from inverse-density goals after the
-density buffer has enough samples, and the rest are random.
+For training batches, `sample_mixed_z` uses `train_goal_ratio` directly: with the
+Go2 default, 80 percent of the batch comes from inverse-density goals and 20
+percent from random sphere samples.
+
+Rollout-time latent refresh is separate. `refresh_z` waits until the density
+buffer has more than `num_envs * 10` samples, then uses its own hard-coded
+`p_reverse = 0.8`; before that gate, it samples random sphere latents.
 
 ## Reward Inference
 
@@ -136,7 +141,7 @@ Original training-time implementation:
 
 Play-time loader implementation:
 
-- `scripts/reinforcement_learning/fb_mod/loader/fb_net_loader.py:70`
+- `scripts/reinforcement_learning/fb_mod/loader/fb_net_loader.py::FBPolicyLoader.reward_inference`
 
 The reward values come from:
 

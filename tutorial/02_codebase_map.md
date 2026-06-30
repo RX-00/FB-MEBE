@@ -18,7 +18,7 @@ repository, not at a separate tutorial implementation.
 | FB agent selector | `scripts/reinforcement_learning/fb_mod/pretrain.py` | Chooses `agent_meta.fb.agent.FBAgent` for `train.agent: meta` or `agent_crl.agent.FB_CRL_AGENT` for `train.agent: crl`. | The Go2 config uses `train.agent: meta`. |
 | FB model | `scripts/reinforcement_learning/fb_mod/agent_meta/fb/model.py` | Builds F, B, actor, optional regularization critic, target networks, and normalizers. | Saved play checkpoints include actor, B, and normalizers, not F. |
 | FB losses and updates | `scripts/reinforcement_learning/fb_mod/agent_meta/fb/agent.py` | Implements contrastive FB TD loss, actor update, optional regularization critic, latent refresh, density sampling, and checkpoint save. | Check `update_fb`, `update_td3_actor`, `sample_mixed_z`, and `refresh_z`. |
-| Density estimator | `scripts/reinforcement_learning/fb_mod/density_estimator/` | Fits a normalizing-flow density model and samples low-density achieved goals for MEBE exploration. | `agent.train.train_goal_ratio` controls the inverse-density/random latent mix. |
+| Density estimator | `scripts/reinforcement_learning/fb_mod/density_estimator/` | Fits a normalizing-flow density model and samples low-density achieved goals for MEBE exploration. | `agent.train.train_goal_ratio` controls the `sample_mixed_z` training batch mix; rollout-time `refresh_z` has a separate hard-coded `p_reverse = 0.8` after a buffer-size gate. |
 | Command sampling | `scripts/reinforcement_learning/toolbox/config_task.py` | Defines locomotion and orientation command modes. | `FB_VecEnvWrapper.eval_task()` expects `[vx, vy, wz]` command tensors. |
 | Reward inference helpers | `scripts/reinforcement_learning/toolbox/functions_reward.py` | Computes command rewards from raw replay observations for play/eval. | Raw observations must include `vx`, `vy`, `vz`, `wz`, `gx`, `gy`, `gz`, and `base_height`. |
 | Training metrics | `scripts/reinforcement_learning/toolbox/dataclass_metrics.py` | Structures train/eval metric fields before logging. | W&B logging is optional through Hydra config. |
@@ -27,7 +27,7 @@ repository, not at a separate tutorial implementation.
 | Play script | `scripts/reinforcement_learning/fb_mod/play.py` | Loads a saved model and replay buffer, infers `z_r`, runs eval, logs metrics, and can record video. | Requires matching `model_step_<t>.pt` and `replay_buffer_step_<t>.pt`. |
 | Xbox play script | `scripts/reinforcement_learning/fb_mod/play_xbox.py` | Runs a saved policy with controller-driven commands. | Hardware assumptions are not fully documented in this repo. |
 | Offline data collection | `scripts/reinforcement_learning/fb_mod/play_collect.py` | Rolls out a saved policy and writes `offline_data.pt`. | Uses the same run/model resolver as play without requiring a replay-buffer artifact. |
-| Offline pretraining | `scripts/reinforcement_learning/fb_mod/pretrain_offline.py` | Trains from offline data. | Currently has a hard-coded absolute `offline_data_path`; make it configurable before relying on it. |
+| Offline pretraining | `scripts/reinforcement_learning/fb_mod/pretrain_offline.py` | Intended to train from offline data. | Currently stale: old `env.video*` config keys, hard-coded absolute `offline_data_path`, and missing `ConvexHull` import. Fix before relying on it. |
 
 ## Separate Paths
 

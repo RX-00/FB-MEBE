@@ -102,7 +102,7 @@ in a fresh clone.
 ## Play Config
 
 `scripts/reinforcement_learning/fb_mod/configs/Isaaclab_fb_play_config_base.yaml`
-is resolved by `scripts/reinforcement_learning/fb_mod/play_config.py:150`.
+is resolved by `scripts/reinforcement_learning/fb_mod/play_config.py::load_play_configs`.
 
 The loader supports:
 

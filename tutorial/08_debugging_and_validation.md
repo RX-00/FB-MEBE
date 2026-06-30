@@ -38,14 +38,14 @@ The Go2 task should return:
 | `policy` | 45 |
 | `obs` | 34 |
 | `goal` | 10 |
-| `critic` | 58 |
+| `critic` | 54 |
 | `action` | 12 |
 
 If a shape mismatch appears, check:
 
 - `go2_cfg_base.py`
 - `go2_env.py:_get_observations`
-- agent config dimensions copied in `pretrain.py:427`
+- agent config dimensions copied in `pretrain.py` from the environment config
 
 ## Reset-Crossing Transitions
 
@@ -55,9 +55,7 @@ temporal-difference target.
 
 Original code:
 
-```text
-scripts/reinforcement_learning/fb_mod/pretrain.py:235
-```
+Check the `indices = ((td["time"] + 1 == new_td["time"]) & (td["time"] != 1)).squeeze()` filter in `scripts/reinforcement_learning/fb_mod/pretrain.py`.
 
 ## Replay Buffer Contract
 

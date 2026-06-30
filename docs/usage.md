@@ -317,19 +317,24 @@ python scripts/reinforcement_learning/fb_mod/play_collect.py \
 
 ## Offline Pretraining
 
-Entry point:
+The checked-in offline pretraining path is currently stale. Keep these commands
+for source inspection, not as validated runnable workflows:
 
 ```bash
 ./bash/fb_pretrain_offline.sh
 ```
 
-Equivalent:
+Direct entry point:
 
 ```bash
 python scripts/reinforcement_learning/fb_mod/pretrain_offline.py --config-name=Isaaclab_pretrain_config_go2
 ```
 
-Do not run this until `offline_data_path` inside `scripts/reinforcement_learning/fb_mod/pretrain_offline.py` is made local or configurable. The checked-in script currently points to an absolute `/home/jiajun_hu/.../offline_data.pt` path.
+Do not run this as-is. Verified blockers in `scripts/reinforcement_learning/fb_mod/pretrain_offline.py`:
+
+- It still reads old `hydra_cfg.env.video`, `env.video_interval`, and `env.video_length` keys; the current configs use split `video_train` and `video_eval` keys.
+- It hard-codes `offline_data_path` to an absolute `/home/jiajun_hu/.../offline_data.pt` path.
+- It calls `ConvexHull` during density logging without importing it.
 
 ## Train Or Play With Standard RSL-RL
 
@@ -385,6 +390,6 @@ Some notes and shell scripts remain under `bash/euler/` and `bash/tars_case/`, b
 | Unknown Go2 task ID | Config uses a stale or misspelled task name. | Use `Isaac-Flat-Unitree-Go2-Rnd-Full-FB-ABS-v0`, `INC-v0`, or `ABS-KAIST-v0`. |
 | `play.py` cannot find checkpoint files | No run was found under `exp_*`, or the requested step does not exist. | Pass `--run-dir <run>` explicitly; use `--model-step latest` and `--replay-buffer-step latest`, or choose one of the steps printed in the error. |
 | `play_xbox.py` cannot find replay buffer | Same resolver failure as `play.py`; it no longer has a separate hard-coded replay-buffer step. | Pass `--run-dir`, `--model-step`, and `--replay-buffer-step` explicitly. |
-| Offline pretraining loads missing data | `pretrain_offline.py` contains a hard-coded absolute path. | Replace that path before running. |
+| Offline pretraining fails before or during startup | `pretrain_offline.py` is stale: old `env.video*` keys, hard-coded `offline_data_path`, and missing `ConvexHull` import. | Update the script before relying on offline pretraining. |
 | `./isaaclab.sh --test`, `--docs`, or `--docker` fails immediately | Those are upstream Isaac Lab paths and this checkout does not include the referenced helper directories. | Use direct FB-MEBE commands from this guide unless the upstream helpers are restored. |
 | `bash/euler/*.sh` or `bash/tars_case/*` cannot find Docker files | Those inherited scripts still reference the removed `docker/` directory. | Treat them as stale until a current non-Docker cluster workflow is added. |
