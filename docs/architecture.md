@@ -62,7 +62,7 @@ The base Go2 config is `source/isaaclab_tasks/isaaclab_tasks/direct/go2/env_defa
 | --- | --- | --- |
 | `policy` | Actor policy | Noisy root velocities, projected gravity, joint position offsets, joint velocities, previous actions. |
 | `obs` | Forward map `F` | Prefix of raw critic observation. |
-| `goal` | Backward map `B` | Prefix of raw critic observation, including velocity, gravity, and height targets. |
+| `goal` | Backward map `B` | Prefix of raw critic observation, including velocity, gravity, and observed base height. |
 | `critic` | Optional critic | Raw state, contacts, feet state, and previous actions. |
 | `raw` | Reward inference | Dictionary with named tensors such as `vx`, `vy`, `wz`, `gx`, `gy`, `gz`, and `base_height`. |
 

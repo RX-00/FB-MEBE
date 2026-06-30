@@ -288,9 +288,11 @@ Controller mapping printed by the script:
 | Input | Effect |
 | --- | --- |
 | Left stick | Linear velocity command. |
-| Right stick | Yaw and height/orientation command. |
-| D-pad up/down | Height adjustment. |
-| Triggers | Fine control. |
+| Right stick X | Yaw command. |
+| Right stick Y | Pitch/orientation command and `vz` command. |
+| Bumpers | Roll/orientation command. |
+| Triggers | Base-height adjustment. |
+| D-pad | Read by the controller loader, but not used by `play_xbox.py` command mapping. |
 | X button | Reset environment. |
 
 ## Collect Offline Data

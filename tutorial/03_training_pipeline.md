@@ -117,8 +117,9 @@ The loop keeps a current transition dictionary `td`, with:
 - `td["reward_task"]`
 - `td["reward_reg"]`
 
-For the first `num_seeding_steps`, actions are random. After that, the actor
-uses `agent.act(obs["policy"], z, mean=False)`.
+For the first `num_seeding_steps`, the loop uses random actions sampled every
+10 steps and held between samples. After that, the actor uses
+`agent.act(obs["policy"], z, mean=False)`.
 
 The latent `z` is refreshed by `FBAgent.refresh_z` at
 `scripts/reinforcement_learning/fb_mod/agent_meta/fb/agent.py:467`.
