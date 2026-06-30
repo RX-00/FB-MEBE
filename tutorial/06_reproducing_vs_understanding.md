@@ -13,15 +13,13 @@ It is not a claim that the full paper has been reproduced in this workspace.
 - 200 Hz simulation and 50 Hz control.
 - MEBE rare-behavior exploration idea.
 
-## What Is Simplified
+## What Is Not Claimed
 
-- The minimal implementation uses a plain YAML config instead of Hydra.
-- The minimal implementation uses TensorBoard/local logs instead of W&B.
-- The minimal implementation uses a histogram inverse-density sampler instead
-  of the original normalizing flow.
-- The minimal implementation does not reproduce hardware deployment.
-- The minimal implementation does not claim paper benchmark curves without a
-  full GPU training/evaluation run.
+- These docs do not claim paper benchmark curves without a full GPU
+  training/evaluation run.
+- These docs do not fully document hardware deployment.
+- These docs do not replace the checked-in FB-MEBE implementation with a
+  separate simplified code path.
 
 ## To Reproduce The Main Repo
 
@@ -44,19 +42,12 @@ python scripts/reinforcement_learning/fb_mod/play.py \
 
 ## To Understand And Modify The Method
 
-Use the minimal implementation:
+Start by reading the real implementation in this order:
 
-```bash
-python -m tutorial.min_implementation.scripts.train \
-    --config tutorial/min_implementation/configs/go2_fb.yaml \
-    --num-envs 64 \
-    --steps 1000 \
-    --no-video
-```
-
-Start by reading:
-
-- `tutorial/min_implementation/fbmebe_min/agent.py`
-- `tutorial/min_implementation/fbmebe_min/replay.py`
-- `tutorial/min_implementation/fbmebe_min/density.py`
-- `tutorial/min_implementation/fbmebe_min/rewards.py`
+- `source/isaaclab_tasks/isaaclab_tasks/direct/go2/env_default_abs/go2_env.py`
+- `scripts/reinforcement_learning/fb_mod/pretrain.py`
+- `scripts/reinforcement_learning/fb_mod/agent_meta/fb/model.py`
+- `scripts/reinforcement_learning/fb_mod/agent_meta/fb/agent.py`
+- `scripts/reinforcement_learning/fb_mod/density_estimator/`
+- `scripts/reinforcement_learning/fb_mod/play.py`
+- `scripts/reinforcement_learning/fb_mod/loader/fb_net_loader.py`

@@ -95,18 +95,15 @@ The training system has five main components:
 - The repo's observation groups: `policy`, `obs`, `goal`, `critic`, and `raw`.
 - Evaluation on command rewards rather than task-specific retraining.
 
-## What This Tutorial Simplifies
+## What This Tutorial Does Not Claim
 
-- The minimal implementation skips W&B and uses TensorBoard-friendly local logs.
-- The minimal implementation uses a small, readable config and a clean module
-  layout instead of the original Hydra-heavy workspace style.
-- The minimal implementation keeps inverse-density exploration simple and
-  testable. It does not reproduce every normalizing-flow detail from the repo.
-- The tutorial does not claim hardware transfer reproduction.
+- It does not claim paper benchmark reproduction without a full training and
+  evaluation run.
+- It does not claim real-robot deployment is documented end to end.
+- It does not replace the checked-in FB training path with a separate teaching
+  implementation.
 
 ## First Command To Run
-
-For reading the existing repo:
 
 ```bash
 python scripts/reinforcement_learning/fb_mod/pretrain.py \
@@ -118,14 +115,4 @@ python scripts/reinforcement_learning/fb_mod/pretrain.py \
     train.interval_eval=1000 \
     train.interval_save_model=1000 \
     wandb.use_wandb=False
-```
-
-For the clean tutorial implementation:
-
-```bash
-python -m tutorial.min_implementation.scripts.train \
-    --config tutorial/min_implementation/configs/go2_fb.yaml \
-    --num-envs 64 \
-    --steps 1000 \
-    --no-video
 ```

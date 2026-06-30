@@ -13,17 +13,18 @@
 - `source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py` registers a stale
   task ID, `Isaac-Flat-Unitree-Go2-FB-v0`.
 
-## Modern Replacements Used
+## Documentation Scope
 
-The tutorial keeps the current Isaac Lab Go2 task but replaces the teaching
-surface:
+The tutorial documents the current Isaac Lab Go2 FB-MEBE path directly. It does
+not introduce or maintain a separate simplified implementation.
 
-- Explicit minimal config instead of a large Hydra stack.
-- TensorBoard/local logs instead of W&B as a required dependency.
-- A small adapter over the env instead of broad RSL-RL compatibility wrappers.
-- A typed replay buffer instead of arbitrary nested dictionaries.
-- A simple inverse-density sampler for pedagogy, with the normalizing flow
-  documented as the original implementation choice.
+The main teaching surface is:
+
+- `scripts/reinforcement_learning/fb_mod/pretrain.py`
+- `scripts/reinforcement_learning/fb_mod/agent_meta/fb/`
+- `scripts/reinforcement_learning/fb_mod/density_estimator/`
+- `scripts/reinforcement_learning/fb_mod/play.py`
+- `source/isaaclab_tasks/isaaclab_tasks/direct/go2/`
 
 ## Semantics That Must Remain Unchanged
 

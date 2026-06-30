@@ -21,11 +21,6 @@ Original code:
 - `scripts/reinforcement_learning/fb_mod/loader/fb_net_loader.py:70`
 - `scripts/reinforcement_learning/toolbox/functions_reward.py:126`
 
-Minimal code:
-
-- `tutorial/min_implementation/scripts/play.py`
-- `tutorial/min_implementation/fbmebe_min/rewards.py`
-
 ## Debug First
 
 Check these before long training:
@@ -40,6 +35,6 @@ Check these before long training:
 
 ## Local Status
 
-In this workspace, non-simulator tests pass when called directly. Full Go2
-training cannot be validated here because CUDA is unavailable and the Go2 USD
-asset cannot be resolved during Isaac Lab environment creation.
+Do not claim a full Go2 run is validated from documentation alone. Validate the
+active Python environment, CUDA, Isaac Sim startup, Go2 asset access, and a short
+main-repo FB smoke run before reporting training success.

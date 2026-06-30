@@ -9,18 +9,13 @@ python -c "import torch; print(torch.__version__); print(torch.cuda.is_available
 nvidia-smi
 ```
 
-For this workspace, the current result is:
+If either command fails, do not claim full Go2 training is validated in the
+active runtime. Isaac Lab Go2 training also requires Isaac Sim startup and
+access to the Go2 USD asset:
 
-- PyTorch imports.
-- CUDA is not available.
-- `nvidia-smi` cannot communicate with a driver.
-- A minimal Isaac Sim train attempt reaches simulator startup but reports no
-  CUDA-capable device.
-- The same attempt fails environment creation because the Go2 USD asset URL
-  cannot be resolved locally:
-  `http://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/4.5/Isaac/IsaacLab/Robots/Unitree/Go2/go2.usd`.
-
-That means full Go2 training cannot be validated in this local runtime.
+```text
+http://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/4.5/Isaac/IsaacLab/Robots/Unitree/Go2/go2.usd
+```
 
 ## Import Order
 
@@ -128,26 +123,6 @@ python scripts/reinforcement_learning/fb_mod/pretrain.py \
     train.interval_eval=1000 \
     train.interval_save_model=1000 \
     wandb.use_wandb=False
-```
-
-Minimal implementation unit tests:
-
-```bash
-python -m pytest tutorial/min_implementation/tests
-```
-
-In this workspace, `pytest` is not installed in the active `fb-mebe`
-environment, so the pytest-style test functions were executed directly with
-`python -B -c ...`.
-
-Minimal implementation smoke train:
-
-```bash
-python -m tutorial.min_implementation.scripts.train \
-    --config tutorial/min_implementation/configs/go2_fb.yaml \
-    --num-envs 64 \
-    --steps 1000 \
-    --no-video
 ```
 
 ## Do Not Hide Failures
