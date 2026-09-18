@@ -4,27 +4,20 @@ This document is for maintainers and future coding agents changing this reposito
 
 ## Ground Rules For Changes
 
-- Treat generated training output as disposable unless the user explicitly asks to preserve it.
+- Preserve existing checkpoints, replay artifacts, resolved configs, logs, and videos unless their deletion or replacement is explicitly authorized. Use a separate run directory for diagnostics; being ignored by Git does not make an artifact disposable.
 - Keep FB training changes grounded in the existing flow: Hydra config, Isaac Lab task config, `FB_VecEnvWrapper`, `DictBuffer`, FB agent, checkpoint loader.
 - Prefer adding config fields over hard-coded local paths when changing run-time behavior.
 - Do not weaken validation by skipping assertions or swallowing errors unless the user explicitly asks for a temporary diagnostic patch.
 
 ## Environment
 
-The project conda environment is `fb-mebe`. A snapshot exported from the working environment is checked in as `environment.yml`:
+Use the separate `fb-mebe` environment, with editable packages bound to this
+checkout. See [environment setup](usage.md#environment-setup) for installation
+and package-location checks.
 
 ```bash
-conda env create -f environment.yml
 conda activate fb-mebe
 ```
-
-If the environment already exists, update it from the snapshot:
-
-```bash
-conda env update -f environment.yml --prune
-```
-
-`environment.yml` is an exported environment snapshot, not a solver lockfile. It is the best checked-in source for package versions, but exact reproduction can still depend on conda channels, pip indexes, CUDA drivers, and platform.
 
 Additional setup information is split across:
 
@@ -71,6 +64,15 @@ python source/isaaclab/test/controllers/test_differential_ik.py
 
 `./isaaclab.sh --test` is an upstream Isaac Lab convenience path and currently references missing `tools/run_all_tests.py`. For this fork, run individual test files directly unless the upstream helper is restored.
 
+For an FB-specific change, run the [small Go2 configuration](usage.md#train-fb-on-go2)
+and check that learning updates, evaluation, and checkpoint saving complete.
+Then test playback with an explicit model/replay selection. A short smoke run
+does not establish convergence, long-run density-estimator behavior, or task
+performance; interpret evaluation scores using the
+[reward limitation](architecture.md#evaluation-reward-limitation).
+Headless train/play checks do not validate Xbox interaction, offline
+pretraining, or the separate RSL-RL workflows.
+
 ## Documentation Checks
 
 This documentation is plain Markdown. There is no checked-in Markdown linter.
@@ -86,7 +88,9 @@ test -f docs/development.md
 
 Also check every documented path that was added or changed.
 
-Some usage docs intentionally cite the current local run under `exp_local/fb_mod/Isaac-Flat-Unitree-Go2-Rnd-Full-FB-ABS-v0/Initial Test/2026-06-26_18-40-46/`. `exp_local/` is generated output and ignored by Git, so verify that path before relying on it in a fresh checkout.
+Keep experiment results with their run artifacts. Avoid machine-specific run
+inventories, copied configuration tables, and rolling validation counts in
+these guides; link to executable sources and describe stable contracts instead.
 
 There is no checked-in docs CI workflow for these Markdown docs.
 
@@ -134,7 +138,17 @@ These issues are verified from source inspection, not fixed here:
 - `Isaaclab_pretrain_config_base.yaml` uses `Isaac-Flat-Unitree-Go2-Rnd-full-FB-v0`, which does not match the registered Go2 IDs.
 - `source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py` registers `Isaac-Flat-Unitree-Go2-FB-v0` to module paths that are not present.
 - `isaaclab.sh --test`, `isaaclab.sh --docs`, and `isaaclab.sh --docker` are upstream Isaac Lab paths that reference files or directories not present in this checkout.
-- `Go2NormEnv.__init__` compares policy observation shape to `cfg.observation_space`, while `Go2_Base_Cfg` separately defines `policy_space`. The cleaner contract is to make `cfg.observation_space` match the actor policy observation exposed to Isaac Lab, and move the FB forward-map dimension to a separate field.
+- The default ABS Gym policy space declares 34 values while the actor receives 45, and the constructor's Gym-space membership guard skips the intended assertion. See the [environment contract](architecture.md#go2-environment-contract).
+- Training-time evaluation logs a reward that does not match the task reward used for inference. This issue also exists in the original implementation (`FB-MEBE_og`); see the [evaluation reward limitation](architecture.md#evaluation-reward-limitation).
+
+## Future FB Reimplementations
+
+For the planned high-level FB controller in `hierarchical_fb`, do not reproduce
+the inherited evaluation mismatch as intended behavior. Correct it or explicitly
+redesign the reward contract: inference and evaluation should share the intended
+task targets and scoring. Test non-upright orientation and height targets, and
+keep motion regularization distinct from task success. This is future work,
+not a claim that the issue is fixed in FB-MEBE.
 
 ## Release Or PR Checklist
 

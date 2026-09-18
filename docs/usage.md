@@ -2,6 +2,10 @@
 
 This guide gives copy-pastable commands for the workflows that are present in the repository. Commands assume the repository root is the current directory.
 
+The main validated path is Go2 ABS FB training and saved-policy playback.
+Other entry points below are identified separately; a registered task or an
+existing script is not proof that its FB workflow works end to end.
+
 ## Environment Setup
 
 The project conda environment is `fb-mebe`. A checked-in environment snapshot exists at `environment.yml`.
@@ -34,6 +38,18 @@ pip install hydra-core
 Do not install the unrelated PyPI package named `hydra`; the scripts import Facebook Hydra through `hydra-core`.
 
 `environment.yml` is an exported environment snapshot, not a solver lockfile. Exact reproduction can still depend on conda channels, pip indexes, CUDA drivers, and platform.
+
+The snapshot also does not establish editable bindings to this checkout. After
+creating or updating the environment, run `./isaaclab.sh --install` from this
+repository and verify the package locations:
+
+```bash
+python -m pip show isaaclab isaaclab-assets isaaclab-tasks isaaclab-rl
+```
+
+The editable project locations should resolve under this repository's `source/`,
+not another Isaac Lab checkout. Keep this environment separate from
+`hierarchical_fb`'s `h_fb`, which uses a different Isaac Lab/Isaac Sim stack.
 
 ## Isaac Lab Utility Commands
 
@@ -79,38 +95,42 @@ Default shell entry point:
 python scripts/reinforcement_learning/fb_mod/pretrain.py --config-name=Isaaclab_pretrain_config_go2
 ```
 
-Small smoke-style configuration for local debugging:
+Small, tested configuration that exercises learning, evaluation, and saving:
 
 ```bash
 python scripts/reinforcement_learning/fb_mod/pretrain.py \
     --config-name=Isaaclab_pretrain_config_go2 \
-    env.num_envs=64 \
+    env.num_envs=32 \
+    env.headless=True \
     env.video_train=False \
     env.video_eval=False \
-    train.num_train_steps=1000 \
-    train.interval_eval=1000 \
-    train.interval_save_model=1000 \
-    wandb.use_wandb=False
+    agent.compile=False \
+    agent.cudagraphs=False \
+    agent.train.batch_size=128 \
+    train.num_seeding_steps=10 \
+    train.num_train_steps=40 \
+    train.replay_buffer_N=64 \
+    train.interval_update=10 \
+    train.num_updates=2 \
+    train.interval_log=10 \
+    train.num_eval_sample=128 \
+    train.interval_eval=20 \
+    train.save_buffer_size=256 \
+    train.interval_save_model=40 \
+    wandb.use_wandb=False \
+    wandb.group=smoke
 ```
 
-Hydra overrides are passed as bare `key=value` arguments after the optional `--config-name=...`.
+This is a runtime smoke test, not a useful trained policy or a convergence
+test. In particular, evaluation completion does not resolve the
+[known reward mismatch](architecture.md#evaluation-reward-limitation).
+The reduced seeding and batch settings ensure this short run reaches learning
+updates instead of spending the entire run collecting seed data.
 
-The Go2 config in `scripts/reinforcement_learning/fb_mod/configs/Isaaclab_pretrain_config_go2.yaml` defaults to:
-
-| Setting | Default |
-| --- | --- |
-| `env.device` | `cuda:0` |
-| `env.task` | `Isaac-Flat-Unitree-Go2-Rnd-Full-FB-ABS-v0` |
-| `env.num_envs` | `2048` |
-| `env.video_train` | `true` |
-| `env.video_eval` | `false` |
-| `wandb.use_wandb` | `true` in the checked-in Go2 YAML |
-| `train.agent` | `meta` |
-| `train.num_train_steps` | `150_000` |
-| `train.interval_save_model` | `50000` |
-| `train.interval_eval` | `20000` |
-
-The observed local run from `./bash/fb_pretrain.sh` resolved `wandb.use_wandb: false` in its saved `hydra_config.yaml`. For a no-W&B local run through `pretrain.py`, pass `wandb.use_wandb=False` explicitly unless the checked-in config has already been changed.
+Hydra overrides are bare `key=value` arguments. Full training defaults live in
+`scripts/reinforcement_learning/fb_mod/configs/Isaaclab_pretrain_config_go2.yaml`
+and its base/agent configs. Pass `wandb.use_wandb=False` explicitly for local
+runs that should not contact W&B.
 
 Training writes under:
 
@@ -130,33 +150,9 @@ videos_eval/
 
 Video directories only appear when the matching video flag is enabled.
 
-Observed local training output from the June 26, 2026 run:
-
-```text
-exp_local/fb_mod/Isaac-Flat-Unitree-Go2-Rnd-Full-FB-ABS-v0/Initial Test/2026-06-26_18-40-46/
-```
-
-That run contains:
-
-```text
-hydra_config.yaml
-models/model_step_50000.pt
-models/model_step_100000.pt
-models/model_step_150000.pt
-models/replay_buffer_step_50000.pt
-models/replay_buffer_step_100000.pt
-models/replay_buffer_step_150000.pt
-videos_pretrain/pretrain-step-150000.mp4
-```
-
-Use the 150k policy and matching replay buffer explicitly:
-
-```bash
-python scripts/reinforcement_learning/fb_mod/play.py \
-    --run-dir "exp_local/fb_mod/Isaac-Flat-Unitree-Go2-Rnd-Full-FB-ABS-v0/Initial Test/2026-06-26_18-40-46" \
-    --model-step 150000 \
-    --replay-buffer-step 150000
-```
+Keep the resolved config, model, and replay artifact together. These files
+support [playback](#play-or-evaluate-a-saved-fb-run), not complete training
+resumption; see the [checkpoint contract](architecture.md#agent-checkpoint-contract).
 
 ## Run Multiple FB Seeds
 
@@ -166,7 +162,8 @@ Local multi-seed script:
 ./bash/fb_pretrain_multi.sh
 ```
 
-The script runs seeds `0`, `42`, `17`, `5`, and `24`, disables train/eval video, uses `cuda:0`, sets `env.num_envs=2048`, and sets `train.num_train_steps=300000`.
+Inspect the script's seed list and resource settings before launching this
+multi-run workload.
 
 ## Enable W&B
 
@@ -239,13 +236,13 @@ exp_local/fb_mod/<task>/<timestamp>_play/
 
 The play config at `scripts/reinforcement_learning/fb_mod/configs/Isaaclab_fb_play_config_base.yaml` sets `env.video_eval: true`, `env.headless: true`, and `env.num_envs: 512`. With those defaults, `play.py` records a headless evaluation video through `RecordVideo_EVAL_GC`.
 
-Record the observed 150k local policy:
+Record a saved policy, replacing the path with your selected run:
 
 ```bash
 python scripts/reinforcement_learning/fb_mod/play.py \
-    --run-dir "exp_local/fb_mod/Isaac-Flat-Unitree-Go2-Rnd-Full-FB-ABS-v0/Initial Test/2026-06-26_18-40-46" \
-    --model-step 150000 \
-    --replay-buffer-step 150000
+    --run-dir "/absolute/path/to/run" \
+    --model-step latest \
+    --replay-buffer-step latest
 ```
 
 Expected eval video output path, based on `play.py` and `wrapper/wrapper_video.py`:
@@ -258,15 +255,16 @@ Disable playback video for metrics-only evaluation:
 
 ```bash
 python scripts/reinforcement_learning/fb_mod/play.py \
-    --run-dir "exp_local/fb_mod/Isaac-Flat-Unitree-Go2-Rnd-Full-FB-ABS-v0/Initial Test/2026-06-26_18-40-46" \
-    --model-step 150000 \
-    --replay-buffer-step 150000 \
+    --run-dir "/absolute/path/to/run" \
+    --model-step latest \
+    --replay-buffer-step latest \
     env.video_eval=False
 ```
 
 ## Play With An Xbox Controller
 
-`play_xbox.py` uses the same run and artifact resolver as `play.py`.
+`play_xbox.py` uses the same run and artifact resolver as `play.py`. Interactive
+controller behavior is not covered by the headless train/play smoke checks.
 
 ```bash
 ./bash/fb_play_xbox.sh --run-dir exp_local/fb_mod/<task>/<group>/<timestamp>
@@ -341,6 +339,7 @@ Do not run this as-is. Verified blockers in `scripts/reinforcement_learning/fb_m
 ## Train Or Play With Standard RSL-RL
 
 The standard RSL-RL scripts are separate from the FB-MEBE training path.
+The Cartpole example below does not validate the FB-specific Cartpole config.
 
 Train:
 

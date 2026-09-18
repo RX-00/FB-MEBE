@@ -1,6 +1,6 @@
 # FB-MEBE Architecture
 
-This document describes the repository as inspected from the checked-in files. It focuses on the FB-MEBE path in `scripts/reinforcement_learning/fb_mod/` and the custom Go2 Isaac Lab tasks in `source/isaaclab_tasks/isaaclab_tasks/direct/go2/`.
+This guide describes the FB-MEBE training and inference contracts. Configuration defaults live in the referenced source files; commands belong in [usage.md](usage.md).
 
 ## Repository Shape
 
@@ -87,35 +87,39 @@ The environment action path differs by task:
 
 Termination behavior is controlled by `Go2NormEnv.termination_type`. The default is `"contact"`. `FB_VecEnvWrapper.eval_task()` sets it to `"none"` during evaluation and fixes `_commands`; `train_task()` restores `"contact"`.
 
-Isaac Lab `DirectRLEnv` uses `cfg.observation_space` to build `single_observation_space["policy"]`. The current Go2 config also defines `policy_space` and uses `observation_space` as the FB forward-map `F` dimension, which mixes two contracts. The better long-term contract is:
-
-- `cfg.observation_space` should match the actor policy observation returned as `observations["policy"]`.
-- FB-specific dimensions such as the forward-map `F` input should live in a separate field, for example `fb_observation_space` or `forward_space`.
-- `Go2NormEnv.__init__` should validate `observations["policy"]` against the Isaac Lab policy space and validate `observations["obs"]` against the FB forward-map dimension.
-
-If making the smallest local fix without renaming fields, comparing `observations["policy"]` to `cfg.policy_space` is more consistent with the current `pretrain.py` and `_get_observations()` code. It still leaves Isaac Lab's `single_observation_space["policy"]` inconsistent because that space is derived from `cfg.observation_space`.
+The default ABS task returns 45 actor inputs, but Isaac Lab declares a
+34-value Gym policy space from `cfg.observation_space`, which this implementation
+also uses for the FB forward-map input. Training uses `cfg.policy_space` for
+the actor, so this mismatch does not itself prevent the FB training path from
+running. The constructor guard, `'policy' in self.single_observation_space`,
+tests sample membership in a Gym space rather than membership in its key map;
+the intended dimension assertion is skipped. A future correction should separate
+the actor and FB dimensions and validate the returned tensors explicitly.
 
 ## FB Training Flow
 
 Primary file: `scripts/reinforcement_learning/fb_mod/pretrain.py`.
 
-Flow:
+For the main Go2 `meta` agent:
 
-1. Parse Hydra config from `scripts/reinforcement_learning/fb_mod/configs/`.
-2. Launch Isaac Lab through `isaaclab.app.AppLauncher`.
-3. Import `isaaclab_tasks` indirectly through task utilities so Gymnasium task registrations are available.
-4. Load the task config with `load_cfg_from_registry(hydra_cfg.env.task, "env_cfg_entry_point")`.
-5. Override `env_cfg.sim.device`, `env_cfg.scene.num_envs`, `env_cfg.seed`, and `env_cfg.viewer.resolution`.
-6. Copy environment dimensions into `hydra_cfg.agent.model`: `policy_dim`, `obs_dim`, `goal_dim`, `critic_dim`, and `action_dim`.
-7. Set `hydra_cfg.train.replay_buffer_capacity = env.num_envs * train.replay_buffer_N`.
-8. Create `WORKSPACE`, including Gymnasium env, optional video wrappers, `FB_VecEnvWrapper`, an FB agent, `DictBuffer`, metrics classes, command sampler, and reward function.
-9. Run the training loop:
-   - collect transitions from the vectorized env;
-   - discard reset-crossing transitions using the time-buffer check;
-   - update the replay buffer;
-   - update the FB agent after `num_seeding_steps`;
-   - periodically evaluate locomotion and orientation commands;
-   - periodically log metrics and save model artifacts.
+1. Load the Hydra config and launch Isaac Sim, then load the task config and
+   construct the environment, wrapper, agent, and replay buffer. Network
+   dimensions come from the task config.
+2. Seed replay with random actions, then collect transitions using the actor
+   conditioned on a latent command `z`. Exclude reset-crossing transitions.
+3. Feed eligible, near-upright replay goals to a normalizing-flow density
+   estimator over planar velocity `(vx, vy)`. Inverse-density weighting favors
+   less-visited goals **already in the buffer**; it does not generate arbitrary
+   new full-state goals from the flow.
+4. Map sampled goals through `B` and mix those latents with random latents for
+   exploration and learning. Learn `F` and `B` from replay, update the actor,
+   and use the optional regularization critic for motion-quality penalties.
+5. Periodically infer task latents from reward-weighted goal embeddings,
+   evaluate rollouts, and save inference artifacts.
+
+Sampling filters, mixture settings, and learning losses are defined in
+`agent_meta/fb/agent.py` and `density_estimator/agent_normalizing_flow.py`, both
+under `scripts/reinforcement_learning/fb_mod/`.
 
 `pretrain.py` supports two agent choices through `hydra_cfg.train.agent`:
 
@@ -125,6 +129,26 @@ Flow:
 | `crl` | `scripts/reinforcement_learning/fb_mod/agent_crl/agent.py:FB_CRL_AGENT` |
 
 `scripts/reinforcement_learning/fb_mod/configs/Isaaclab_pretrain_config_go2.yaml` sets `train.agent: meta` and overrides FB hyperparameters for Go2. The base config sets `train.agent: crl`.
+
+## Evaluation Reward Limitation
+
+The training-time evaluation in `pretrain.py::WORKSPACE.eval` infers a latent
+using `RewardFunction.inference` and the requested task, including its target
+orientation. It then logs the environment's `reward_task`. However,
+`FB_VecEnvWrapper.eval_task()` passes only `(vx, vy, wz)` to the environment,
+whose task reward still targets upright gravity. The environment reward also
+omits the height term used by reward inference.
+
+This issue was present in the original implementation (`FB-MEBE_og`). A policy
+correctly following a tilted target can receive a poor logged score; these
+returns are not reliable measures of requested-orientation tracking. This does
+not, by itself, establish that the learned policy is defective.
+
+Future reimplementations, including the planned high-level FB controller for
+`hierarchical_fb`, should correct or explicitly redesign this mismatch. Reward
+inference and evaluation must agree on the intended task targets and scoring,
+with regression tests for non-upright orientations and height targets. See
+[development guidance](development.md#future-fb-reimplementations).
 
 ## Hydra Config Structure
 
@@ -177,6 +201,11 @@ Both `FBAgent.save()` and `FB_CRL_AGENT.save()` write the same keys:
 }
 ```
 
+These are inference checkpoints, not complete training-resume snapshots. They
+omit forward-map, critic, density-estimator, and optimizer state. The separately
+saved replay artifact is an observation sample for reward inference, not a full
+transition buffer for resuming training.
+
 `scripts/reinforcement_learning/fb_mod/loader/fb_net_loader.py::FBPolicyLoader` depends on that contract. Given `path/to/run/models/model_step_<t>.pt`, it resolves the run config at `path/to/run/hydra_config.yaml`, rebuilds actor and backward-map networks from that config, loads the checkpoint keys, and exposes:
 
 | Method | Role |
@@ -208,26 +237,12 @@ Observed generated files and directories:
 
 | Artifact | Created by | Meaning |
 | --- | --- | --- |
-| `hydra_config.yaml` | `pretrain.py`; intended stale offline path | Resolved training config used by loaders and reproducibility. |
-| `models/model_step_<t>.pt` | `pretrain.py`; intended stale offline path | Actor/backward-map checkpoint. |
-| `models/replay_buffer_step_<t>.pt` | `pretrain.py`; intended stale offline path | Sample of stored observations for reward inference. |
-| `videos_pretrain/` | Video wrappers when training video is enabled. |
-| `videos_eval/` | Video wrappers when eval video is enabled. |
+| `hydra_config.yaml` | `pretrain.py` | Resolved training config used by loaders and reproducibility. |
+| `models/model_step_<t>.pt` | `pretrain.py` | Actor/backward-map checkpoint. |
+| `models/replay_buffer_step_<t>.pt` | `pretrain.py` | Sample of stored observations for reward inference. |
+| `videos_pretrain/` | Training video wrapper | Present when training video is enabled. |
+| `videos_eval/` | Evaluation video wrapper | Present when evaluation video is enabled. |
 | `offline_data.pt` | `play_collect.py` | Full collected offline buffer saved under `play_cfg.path`. |
-
-The current workspace contains one observed Go2 ABS run from June 26, 2026:
-
-```text
-exp_local/fb_mod/Isaac-Flat-Unitree-Go2-Rnd-Full-FB-ABS-v0/Initial Test/2026-06-26_18-40-46/
-```
-
-It confirms the checkpoint/replay-buffer contract at steps `50000`, `100000`, and `150000`, and the final trained policy is:
-
-```text
-exp_local/fb_mod/Isaac-Flat-Unitree-Go2-Rnd-Full-FB-ABS-v0/Initial Test/2026-06-26_18-40-46/models/model_step_150000.pt
-```
-
-The same run also contains `videos_pretrain/pretrain-step-150000.mp4`, because `env.video_train` was enabled in the resolved `hydra_config.yaml`.
 
 `.gitignore` ignores `exp_local/`, but it does not ignore every possible `exp_<machine>/` directory. If `train.machine=cluster`, check generated `exp_cluster/` output before committing.
 
@@ -239,11 +254,7 @@ This fork keeps substantial Isaac Lab source code, but it is not a complete upst
 
 ## Known Inconsistencies And Risks
 
-These are observed from repository files and should not be treated as fixed:
-
-- `scripts/reinforcement_learning/fb_mod/pretrain_offline.py` is stale against the current configs: it reads old `env.video`, `env.video_interval`, and `env.video_length` keys, hard-codes `offline_data_path` to `/home/jiajun_hu/.../offline_data.pt`, and calls `ConvexHull` without importing it. Treat offline pretraining as not currently validated until those are fixed.
-- `scripts/reinforcement_learning/fb_mod/configs/Isaaclab_fb_play_config_base.yaml` defaults to `path: latest`. This is convenient, but explicit `--run-dir` is safer when multiple runs exist.
-- `scripts/reinforcement_learning/fb_mod/configs/Isaaclab_pretrain_config_base.yaml` uses an unregistered-looking task ID with lowercase `full`. Use `Isaaclab_pretrain_config_go2.yaml` or a registered task ID.
-- `source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py` registers `Isaac-Flat-Unitree-Go2-FB-v0` to missing module paths.
-- `isaaclab.sh --test`, `isaaclab.sh --docs`, and `isaaclab.sh --docker` reference upstream Isaac Lab helper paths that are not present in this checkout.
-- Remaining Euler/TARS notes under `bash/` reference the removed Docker tooling.
+The observation-space discrepancy and evaluation-reward mismatch above remain
+unfixed. For stale entry points and maintenance constraints, see
+[known technical debt](development.md#known-technical-debt); use
+[usage.md](usage.md) for supported workflow commands.
